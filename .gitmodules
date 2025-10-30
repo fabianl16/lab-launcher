@@ -4,3 +4,6 @@
 [submodule "worker"]
 	path = worker
 	url = https://github.com/fabianl16/worker-py-core.git
+[submodule "aquaculture-lab-backend"]
+	path = aquaculture-lab-backend
+	url = https://github.com/fabianl16/aquaculture-lab-backend.git
