@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - simnet
+  client-gateway:
+    container_name: client-gateway
+    build: ./client-gateway
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client-gateway/src:/usr/src/app/src
+    command: npm run start:dev
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    networks:
+      - simnet
+  lab-backend:
+    container_name: nest-backend-lab
+    build: ./aquaculture-lab-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./aquaculture-lab-backend/src:/usr/src/app/src
+    command: npm run start:dev
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    networks:
+      - simnet
+  python-worker:
+    build: ./worker
+    container_name: python-worker
+    volumes:
+      - ./worker:/app  
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    networks:
+      - simnet
+    restart: always
+
+networks:
+  simnet:
+    driver: bridge
