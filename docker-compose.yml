@@ -14,14 +14,50 @@ services:
       - simnet
   client-gateway:
     container_name: client-gateway
-    build: ./client-gateway
+    build: ./apps/client-gateway
     ports:
       - ${CLIENT_GATEWAY_PORT}:3001
     volumes:
-      - ./client-gateway/src:/usr/src/app/src
+      - ./apps/client-gateway/src:/usr/src/app/src
     command: npm run start:dev
     depends_on:
       - rabbitmq
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_GATEWAY_QUEUE=${RABBITMQ_GATEWAY_QUEUE}
+      - RABBITMQ_SERVICE=${RABBITMQ_SERVICE}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - GATEWAY_PORT=${CLIENT_GATEWAY_PORT}
+    networks:
+      - simnet
+  lab-backend:
+    container_name: nest-backend-lab
+    build: ./apps/aquaculture-lab-backend
+    ports:
+      - ${BACKEND_PORT}:3001
+    volumes:
+      - ./apps/aquaculture-lab-backend/src:/usr/src/app/src
+    command: npm run start:dev
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_GATEWAY_QUEUE=${RABBITMQ_GATEWAY_QUEUE}
+      - RABBITMQ_SIMULATIONS_QUEUE=${RABBITMQ_SIMULATIONS_QUEUE}
+      - RABBITMQ_SERVICE=${RABBITMQ_SERVICE}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - BACKEND_PORT=${BACKEND_PORT}
+    networks:
+      - simnet
+  python-worker:
+    build: ./apps/worker
+    container_name: python-worker
+    volumes:
+      - ./apps/worker:/app
     environment:
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBITMQ_SIMULATIONS_QUEUE=${RABBITMQ_SIMULATIONS_QUEUE}
@@ -29,30 +65,6 @@ services:
       - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - NESTJS_PORT=${CLIENT_GATEWAY_PORT}
-    networks:
-      - simnet
-  lab-backend:
-    container_name: nest-backend-lab
-    build: ./aquaculture-lab-backend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./aquaculture-lab-backend/src:/usr/src/app/src
-    command: npm run start:dev
-    depends_on:
-      - rabbitmq
-    environment:
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-    networks:
-      - simnet
-  python-worker:
-    build: ./worker
-    container_name: python-worker
-    volumes:
-      - ./worker:/app
-    environment:
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - rabbitmq
     networks:
