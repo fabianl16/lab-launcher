@@ -1,9 +1,9 @@
 [submodule "client-gateway"]
-	path = client-gateway
+	path = apps/client-gateway
 	url = https://github.com/fabianl16/client-gateway-lab.git
 [submodule "worker"]
-	path = worker
+	path = apps/worker
 	url = https://github.com/fabianl16/worker-py-core.git
 [submodule "aquaculture-lab-backend"]
-	path = aquaculture-lab-backend
+	path = apps/aquaculture-lab-backend
 	url = https://github.com/fabianl16/aquaculture-lab-backend.git
