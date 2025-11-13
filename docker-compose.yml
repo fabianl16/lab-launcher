@@ -12,6 +12,16 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     networks:
       - simnet
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - ${REDIS_PORT}:6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - simnet
   client-gateway:
     container_name: client-gateway
     build: ./apps/client-gateway
@@ -51,6 +61,9 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - RABBITMQ_PORT=${RABBITMQ_PORT}
       - BACKEND_PORT=${BACKEND_PORT}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_CLIENT=${REDIS_CLIENT}
     networks:
       - simnet
   python-worker:
@@ -65,6 +78,8 @@ services:
       - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
     depends_on:
       - rabbitmq
     networks:
@@ -73,3 +88,6 @@ services:
 networks:
   simnet:
     driver: bridge
+
+volumes:
+  redis_data:
