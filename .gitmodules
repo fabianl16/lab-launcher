@@ -7,3 +7,6 @@
 [submodule "aquaculture-lab-backend"]
 	path = apps/aquaculture-lab-backend
 	url = https://github.com/fabianl16/aquaculture-lab-backend.git
+[submodule "apps/aquaculture-lab-frontend"]
+	path = apps/aquaculture-lab-frontend
+	url = https://github.com/fabianl16/aquaculture-lab-frontend.git
