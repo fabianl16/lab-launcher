@@ -66,6 +66,21 @@ services:
       - REDIS_CLIENT=${REDIS_CLIENT}
     networks:
       - simnet
+  lab-frontend:
+    container_name: angular-frontend-lab
+    build: ./apps/aquaculture-lab-frontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./apps/aquaculture-lab-frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run start
+    depends_on:
+      - client-gateway
+    networks:
+      - simnet
   python-worker:
     build: ./apps/worker
     container_name: python-worker
