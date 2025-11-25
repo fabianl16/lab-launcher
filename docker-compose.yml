@@ -40,6 +40,12 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - RABBITMQ_PORT=${RABBITMQ_PORT}
       - GATEWAY_PORT=${CLIENT_GATEWAY_PORT}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_CLIENT=${REDIS_CLIENT}
+      - REDIS_SIMULATION_CHANNEL=${REDIS_SIMULATION_CHANNEL}
+      - REDIS_SIMULATION_NAMESPACE=${REDIS_SIMULATION_NAMESPACE}
+      - REDIS_SIMULATION_EVENT=${REDIS_SIMULATION_EVENT}
     networks:
       - simnet
   lab-backend:
@@ -75,7 +81,10 @@ services:
       - ./apps/aquaculture-lab-frontend:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=development
+      - REDIS_SIMULATION_CHANNEL=${REDIS_SIMULATION_CHANNEL}
+      - REDIS_SIMULATION_NAMESPACE=${REDIS_SIMULATION_NAMESPACE}
+      - REDIS_SIMULATION_EVENT=${REDIS_SIMULATION_EVENT}
+      - GATEWAY_URL=${GATEWAY_URL}
     command: npm run start
     depends_on:
       - client-gateway
@@ -95,6 +104,9 @@ services:
       - RABBITMQ_PORT=${RABBITMQ_PORT}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_HOST=${REDIS_HOST}
+      - REDIS_SIMULATION_CHANNEL=${REDIS_SIMULATION_CHANNEL}
+      - REDIS_SIMULATION_NAMESPACE=${REDIS_SIMULATION_NAMESPACE}
+      - REDIS_SIMULATION_EVENT=${REDIS_SIMULATION_EVENT}
     depends_on:
       - rabbitmq
     networks:
