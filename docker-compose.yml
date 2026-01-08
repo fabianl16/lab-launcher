@@ -1,6 +1,21 @@
 version: "3.9"
 
 services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000"      # S3 API
+      - "9001:9001"      # Panel web
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET}
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./minio_data:/data
+    networks:
+      - simnet
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -10,6 +25,9 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - ./rabbit_definitions.json:/etc/rabbitmq/definitions.json
+    command: ["rabbitmq-server", "-q", "--load-definitions", "/etc/rabbitmq/definitions.json"]
     networks:
       - simnet
   redis:
@@ -91,13 +109,17 @@ services:
     networks:
       - simnet
   python-worker:
-    build: ./apps/worker
+    build: 
+      context: ./apps/worker
+      dockerfile: Dockerfile.worker
     container_name: python-worker
     volumes:
       - ./apps/worker:/app
+      - ./${SIMULATIONS_OUT_DIR}:/app/${SIMULATIONS_OUT_DIR}
     environment:
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBITMQ_SIMULATIONS_QUEUE=${RABBITMQ_SIMULATIONS_QUEUE}
+      - RABBITMQ_UPLOAD_QUEUE=${RABBITMQ_UPLOAD_QUEUE}
       - RABBITMQ_SERVICE=${RABBITMQ_SERVICE}
       - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
@@ -107,11 +129,59 @@ services:
       - REDIS_SIMULATION_CHANNEL=${REDIS_SIMULATION_CHANNEL}
       - REDIS_SIMULATION_NAMESPACE=${REDIS_SIMULATION_NAMESPACE}
       - REDIS_SIMULATION_EVENT=${REDIS_SIMULATION_EVENT}
+      - SIMULATIONS_OUT_DIR=${SIMULATIONS_OUT_DIR}
+      - CACHE_SERVER_URL=${CACHE_SERVER_URL}
+      - MINIO_URL=${MINIO_URL}
+      - MINIO_ACCESS=${MINIO_ACCESS}
+      - MINIO_SECRET=${MINIO_SECRET}
+      - MINIO_BUCKET=${MINIO_BUCKET}
     depends_on:
       - rabbitmq
     networks:
       - simnet
-
+  uploader-worker:
+    build: 
+      context: ./apps/worker
+      dockerfile: Dockerfile.uploader
+    container_name: python-uploader
+    volumes: 
+      - ./apps/worker:/app
+      - ./${SIMULATIONS_OUT_DIR}:/app/${SIMULATIONS_OUT_DIR}
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_SIMULATIONS_QUEUE=${RABBITMQ_SIMULATIONS_QUEUE}
+      - RABBITMQ_UPLOAD_QUEUE=${RABBITMQ_UPLOAD_QUEUE}
+      - RABBITMQ_SERVICE=${RABBITMQ_SERVICE}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_SIMULATION_CHANNEL=${REDIS_SIMULATION_CHANNEL}
+      - REDIS_SIMULATION_NAMESPACE=${REDIS_SIMULATION_NAMESPACE}
+      - REDIS_SIMULATION_EVENT=${REDIS_SIMULATION_EVENT}
+      - SIMULATIONS_OUT_DIR=${SIMULATIONS_OUT_DIR}
+      - CACHE_SERVER_URL=${CACHE_SERVER_URL}
+      - MINIO_URL=${MINIO_URL}
+      - MINIO_ACCESS=${MINIO_ACCESS}
+      - MINIO_SECRET=${MINIO_SECRET}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+    networks:
+      - simnet
+  cache:
+    build: 
+      context: ./apps/worker
+      dockerfile: Dockerfile.cache
+    container_name: simulation_cache_server
+    ports:
+      - ${SERVER_CACHE_PORT}:8001
+    volumes:
+      - ./apps/worker:/app
+      - ./${SIMULATIONS_OUT_DIR}:/app/${SIMULATIONS_OUT_DIR}
+    environment:
+      - SIMULATIONS_OUT_DIR=${SIMULATIONS_OUT_DIR}
+    networks:
+      - simnet
 networks:
   simnet:
     driver: bridge
